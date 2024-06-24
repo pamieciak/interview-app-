@@ -250,6 +250,11 @@ import { MatIconButton } from '@angular/material/button';
         <td mat-cell *matCellDef="let element">{{ element.swap }}</td>
       </ng-container>
 
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Swap</th>
+        <td mat-cell *matCellDef="let element">{{ element.swap }}</td>
+      </ng-container>
+
       <!--      <ng-container matColumnDef="expand">-->
       <!--        <th mat-header-cell *matHeaderCellDef aria-label="row actions"></th>-->
       <!--        <td mat-cell *matCellDef="let element">-->
@@ -284,16 +289,72 @@ import { MatIconButton } from '@angular/material/button';
             "
           >
             <div class="example-element-diagram">
-              <div class="example-element-position">{{ element.position }}</div>
-              <div class="example-element-symbol">{{ element.symbol }}</div>
-              <div class="example-element-name">{{ element.name }}</div>
-              <div class="example-element-weight">{{ element.weight }}</div>
-            </div>
-            <div class="example-element-description">
-              {{ element.description }}
-              <span class="example-element-description-attribution">
-                -- Wikipedia
-              </span>
+              <table
+                mat-table
+                [dataSource]="element.orders"
+                class="inner-table"
+              >
+                <ng-container matColumnDef="symbol">
+                  <th mat-header-cell *matHeaderCellDef>Symbol</th>
+                  <td mat-cell *matCellDef="let order">{{ order.symbol }}</td>
+                </ng-container>
+                <ng-container matColumnDef="id">
+                  <th mat-header-cell *matHeaderCellDef>Order ID</th>
+                  <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="openTime">
+                  <th mat-header-cell *matHeaderCellDef>Open Time</th>
+                  <td mat-cell *matCellDef="let order">
+                    {{ order.openTime | date: 'dd.MM.yyyy HH:mm:ss' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="openPrice">
+                  <th mat-header-cell *matHeaderCellDef>Open Price</th>
+                  <td mat-cell *matCellDef="let order">
+                    {{ order.openPrice }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="swap">
+                  <th mat-header-cell *matHeaderCellDef>Swap</th>
+                  <td mat-cell *matCellDef="let order">{{ order.swap }}</td>
+                </ng-container>
+
+                <!--                <ng-container matColumnDef="closePrice">-->
+                <!--                  <th mat-header-cell *matHeaderCellDef>Close Price</th>-->
+                <!--                  <td mat-cell *matCellDef="let order">-->
+                <!--                    {{ order.closePrice }}-->
+                <!--                  </td>-->
+                <!--                </ng-container>-->
+
+                <ng-container matColumnDef="size">
+                  <th mat-header-cell *matHeaderCellDef>Size</th>
+                  <td mat-cell *matCellDef="let order">{{ order.size }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="side">
+                  <th mat-header-cell *matHeaderCellDef>Side</th>
+                  <td mat-cell *matCellDef="let order">{{ order.side }}</td>
+                </ng-container>
+
+                <tr
+                  mat-row
+                  *matRowDef="
+                    let row;
+                    columns: [
+                      'symbol',
+                      'id',
+                      'side',
+                      'size',
+                      'openTime',
+                      'openPrice',
+                      'swap',
+                    ]
+                  "
+                ></tr>
+              </table>
             </div>
           </div>
         </td>
@@ -338,22 +399,31 @@ import { MatIconButton } from '@angular/material/button';
     .example-element-detail {
       overflow: hidden;
       display: flex;
+      justify-content: flex-end;
+    }
+
+    .mat-mdc-cell {
+      min-width: 100px;
+    }
+
+    .mat-mdc-header-cell {
+      max-width: 100px;
     }
 
     .example-element-diagram {
-      min-width: 80px;
-      border: 2px solid black;
-      padding: 8px;
+      height: fit-content;
+      display: flex;
+
+      min-width: 100%;
+
       font-weight: lighter;
-      margin: 8px 0;
-      height: 104px;
     }
 
-    .example-element-symbol {
-      font-weight: bold;
-      font-size: 40px;
-      line-height: normal;
-    }
+    //.example-element-symbol {
+    //  font-weight: bold;
+    //  font-size: 40px;
+    //  line-height: normal;
+    //}
 
     .example-element-description {
       padding: 16px;
