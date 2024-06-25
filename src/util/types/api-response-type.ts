@@ -1,3 +1,13 @@
+export interface GroupedOrder {
+  symbol: string;
+  orderCount: number;
+  openPrice: number;
+  swap: number;
+  profit: number;
+  size: number;
+  orders: Order[];
+}
+
 export interface Order {
   openTime: number;
   openPrice: number;
@@ -7,16 +17,7 @@ export interface Order {
   symbol: string;
   side: string;
   size: number;
-}
-
-export interface GroupedOrder {
-  symbol: string;
-  orderCount: number;
-  openPrice: number;
-  swap: number;
-  profit: number;
-  size: number;
-  orders: Order[];
+  currentProfit?: number;
 }
 
 export interface ApiResponse {
