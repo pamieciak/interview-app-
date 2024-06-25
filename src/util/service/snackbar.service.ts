@@ -17,7 +17,7 @@ export class SnackBarService {
   #showSnackBar(
     message: string,
     action: string = 'Close',
-    duration: number = 2000,
+    duration: number = 3000,
   ) {
     this.snackBar.open(message, action, {
       duration: duration,
@@ -31,10 +31,10 @@ export class SnackBarService {
       const orderIDs = (order as GroupedOrder).orders
         .map((order) => order.id)
         .join(',');
-      this.#showSnackBar(`zamknięto zlecenia nr ${orderIDs}`);
+      this.#showSnackBar(`Zamknięto zlecenia nr ${orderIDs}`);
     } else {
       const orderID = (order as Order)?.id;
-      this.#showSnackBar(`zamknięto zlecenie nr ${orderID}`);
+      this.#showSnackBar(`Zamknięto zlecenie nr ${orderID}`);
     }
   }
 }
