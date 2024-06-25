@@ -21,7 +21,7 @@ import {
   MatTable,
   MatTableDataSource,
 } from '@angular/material/table';
-import { elementAt, map, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import {
   animate,
   state,
@@ -68,7 +68,7 @@ import { WebSocketService } from '../../../util/service/websocket.service';
       mat-table
       [dataSource]="dataSource"
       multiTemplateDataRows
-      class="mat-elevation-z8"
+      class="mat-elevation-z3"
     >
       <ng-container matColumnDef="symbol">
         <th mat-header-cell *matHeaderCellDef>Symbol</th>
@@ -118,13 +118,20 @@ import { WebSocketService } from '../../../util/service/websocket.service';
       </ng-container>
       <ng-container matColumnDef="profit">
         <th mat-header-cell *matHeaderCellDef>Profit</th>
-        <td mat-cell *matCellDef="let element">
+        <td
+          mat-cell
+          *matCellDef="let element"
+          [ngClass]="{
+            'profit-positive': element.profit > 0,
+            'profit-negative': element.profit < 0,
+          }"
+        >
           {{ element.profit | number: '1.2-2' }}
         </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>elo</th>
+        <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let element">
           <button mat-icon-button (click)="deleteAll(element)">
             <mat-icon>delete</mat-icon>
@@ -134,6 +141,7 @@ import { WebSocketService } from '../../../util/service/websocket.service';
 
       <ng-container matColumnDef="expandedDetail">
         <td
+          class="expand"
           mat-cell
           *matCellDef="let element"
           [attr.colspan]="columnsToDisplayWithExpand.length"
@@ -145,23 +153,23 @@ import { WebSocketService } from '../../../util/service/websocket.service';
             "
           >
             <div class="example-element-diagram">
-              <table
-                mat-table
-                [dataSource]="element.orders"
-                class="inner-table"
-              >
+              <table mat-table [dataSource]="element.orders">
                 <ng-container matColumnDef="symbol">
                   <th mat-header-cell *matHeaderCellDef>Symbol</th>
-                  <td mat-cell *matCellDef="let order">{{ order.symbol }}</td>
+                  <td mat-cell *matCellDef="let order" class="ext-cell">
+                    {{ order.symbol }}
+                  </td>
                 </ng-container>
                 <ng-container matColumnDef="id">
                   <th mat-header-cell *matHeaderCellDef>Order ID</th>
-                  <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+                  <td mat-cell *matCellDef="let element" class="ext-cell">
+                    {{ element.id }}
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="openTime">
                   <th mat-header-cell *matHeaderCellDef>Open Time</th>
-                  <td mat-cell *matCellDef="let order">
+                  <td mat-cell *matCellDef="let order" class="ext-cell">
                     {{ order.openTime | date: 'dd.MM.yyyy HH:mm:ss' }}
                   </td>
                 </ng-container>
@@ -179,15 +187,26 @@ import { WebSocketService } from '../../../util/service/websocket.service';
                 </ng-container>
                 <ng-container matColumnDef="size">
                   <th mat-header-cell *matHeaderCellDef>Size</th>
-                  <td mat-cell *matCellDef="let order">{{ order.size }}</td>
+                  <td mat-cell *matCellDef="let order" class="ext-cell">
+                    {{ order.size }}
+                  </td>
                 </ng-container>
                 <ng-container matColumnDef="side">
                   <th mat-header-cell *matHeaderCellDef>Side</th>
-                  <td mat-cell *matCellDef="let order">{{ order.side }}</td>
+                  <td mat-cell *matCellDef="let order" class="ext-cell">
+                    {{ order.side }}
+                  </td>
                 </ng-container>
                 <ng-container matColumnDef="profit">
                   <th mat-header-cell *matHeaderCellDef>Profit</th>
-                  <td mat-cell *matCellDef="let order">
+                  <td
+                    mat-cell
+                    *matCellDef="let order"
+                    [ngClass]="{
+                      'profit-positive': order.currentProfit > 0,
+                      'profit-negative': order.currentProfit < 0,
+                    }"
+                  >
                     {{ order.currentProfit | number: '1.2-2' }}
                   </td>
                 </ng-container>
@@ -242,6 +261,11 @@ import { WebSocketService } from '../../../util/service/websocket.service';
     </table>
   `,
   styles: `
+    :host {
+      display: block;
+      padding: 16px;
+    }
+
     table {
       width: 100%;
     }
@@ -251,11 +275,11 @@ import { WebSocketService } from '../../../util/service/websocket.service';
     }
 
     tr.example-element-row:not(.example-expanded-row):hover {
-      background: whitesmoke;
+      background-color: var(--background-hover);
     }
 
     tr.example-element-row:not(.example-expanded-row):active {
-      background: #efefef;
+      background-color: var(--background-hover);
     }
 
     .example-element-row td {
@@ -265,34 +289,21 @@ import { WebSocketService } from '../../../util/service/websocket.service';
     .example-element-detail {
       overflow: hidden;
       display: flex;
-      justify-content: flex-end;
+      width: 100%;
+      padding: 0;
     }
-
-    .mat-mdc-cell {
-      min-width: 100px;
-    }
-
-    .mat-mdc-header-cell {
-      max-width: 100px;
-    }
-
     .example-element-diagram {
       height: fit-content;
-      display: flex;
-
-      min-width: 100%;
-
-      font-weight: lighter;
+      width: 100%;
+    }
+    .mat-column-expandedDetail {
+      padding: 0;
     }
 
-    //.example-element-symbol {
-    //  font-weight: bold;
-    //  font-size: 40px;
-    //  line-height: normal;
-    //}
-
-    .example-element-description {
-      padding: 16px;
+    .mat-mdc-cell,
+    .mat-mdc-header-cell {
+      color: var(--text-default);
+      min-width: 100px;
     }
 
     .example-element-description-attribution {
@@ -301,8 +312,9 @@ import { WebSocketService } from '../../../util/service/websocket.service';
 
     .row {
       display: flex;
+      padding: 2px;
       align-items: center;
-      width: 200px;
+      height: 100%;
       justify-content: space-between;
     }
     .order-count {
@@ -317,6 +329,30 @@ import { WebSocketService } from '../../../util/service/websocket.service';
       background: black;
       color: white;
       margin-left: 10px;
+    }
+
+    .mat-mdc-header-row {
+      background-color: var(--background-row);
+    }
+
+    .mat-mdc-row {
+      background-color: var(--background-row);
+    }
+
+    .mat-mdc-row:hover {
+      background-color: var(--background-hover);
+    }
+
+    .profit-positive {
+      color: var(--profit-positive);
+    }
+
+    .profit-negative {
+      color: var(--profit-negative);
+    }
+
+    .ext-cell {
+      text-align: end;
     }
   `,
 })
@@ -343,8 +379,7 @@ export class TableComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.apiService.getOrders().subscribe((orders) => {
-      const groupedOrders = this.groupBySymbol(orders);
-      this.dataSource.data = groupedOrders;
+      this.dataSource.data = this.groupBySymbol(orders);
 
       const symbols = [...new Set(orders.map((order) => order.symbol))];
       this.webSocketService.subscribeSymbols(symbols);
