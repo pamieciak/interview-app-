@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, inject, Injectable, OnInit } from '@angular/core';
-import { DataFactoryService } from '@app/trades/util/service/data-factory.service';
+import { DataFactoryService } from '@app/trades/data-access/services/data-factory.service';
 import { QuoteService } from '@app/trades/util/service/quote.service';
 import { GroupedOrder, Order } from '@app/trades/util/types';
 import { ProfitCalculationService } from '@app/trades/util/service/profit-calculation.service';

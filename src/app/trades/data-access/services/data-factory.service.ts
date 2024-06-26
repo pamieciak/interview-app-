@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
-import { ApiResponse, Order } from '@app/trades/util/types';
+
 import { SnackBarService } from '@app/trades/util/service/snackbar.service';
+import { ApiResponse, Order } from '@app/trades/util/types';
 
 @Injectable({
   providedIn: 'root',
