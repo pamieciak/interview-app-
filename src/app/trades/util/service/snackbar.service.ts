@@ -4,7 +4,7 @@ import {
   MatSnackBarHorizontalPosition,
   MatSnackBarVerticalPosition,
 } from '@angular/material/snack-bar';
-import { GroupedOrder, Order } from '../types/api-response-type';
+import { GroupedOrder, Order } from '@app/trades/util/types';
 
 @Injectable({
   providedIn: 'root',
@@ -16,11 +16,11 @@ export class SnackBarService {
 
   #showSnackBar(
     message: string,
-    action: string = 'Close',
+    action: string = 'Zamknij',
     duration: number = 3000,
   ) {
     this.snackBar.open(message, action, {
-      duration: duration,
+      duration,
       horizontalPosition: this.horizontalPosition,
       verticalPosition: this.verticalPosition,
     });
@@ -36,5 +36,15 @@ export class SnackBarService {
       const orderID = (order as Order)?.id;
       this.#showSnackBar(`Zamknięto zlecenie nr ${orderID}`);
     }
+  }
+
+  showErrorMessage(
+    errorMessage: string,
+    action: string = 'Zamknij',
+    duration: number = 3000,
+  ) {
+    this.snackBar.open(errorMessage, action, {
+      duration,
+    });
   }
 }
