@@ -20,6 +20,7 @@ export class DataFactoryService {
         this.snackBarService.showErrorMessage(
           `${error.message}, Błąd pobierania danych`,
         );
+
         return EMPTY;
       }),
     );
