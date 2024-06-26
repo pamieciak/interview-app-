@@ -8,29 +8,51 @@ import { TableComponent } from '../ui/components';
   standalone: true,
   imports: [CommonModule, RouterOutlet, TableComponent],
   styleUrl: './app.component.scss',
-  template: ` <app-table-component /> `,
+  template: `
+    <div>
+      <button (click)="toggleTheme()">Toggle Theme</button>
+    </div>
+    <app-table-component />
+  `,
 })
 export class AppComponent implements OnInit {
-  renderer = inject(Renderer2);
+  currentTheme!: 'light-theme' | 'dark-theme';
+
+  constructor(private renderer: Renderer2) {}
 
   ngOnInit() {
+    this.applySystemTheme();
+
+    window
+      .matchMedia('(prefers-color-scheme: dark)')
+      .addEventListener('change', this.applySystemTheme.bind(this));
+  }
+
+  applySystemTheme() {
     const prefersDarkScheme = window.matchMedia(
       '(prefers-color-scheme: dark)',
     ).matches;
 
     if (prefersDarkScheme) {
+      this.renderer.removeClass(document.body, 'light-theme');
       this.renderer.addClass(document.body, 'dark-theme');
+      this.currentTheme = 'dark-theme';
     } else {
+      this.renderer.removeClass(document.body, 'dark-theme');
       this.renderer.addClass(document.body, 'light-theme');
+      this.currentTheme = 'light-theme';
     }
+  }
 
-    window
-      .matchMedia('(prefers-color-scheme: dark)')
-      .addEventListener('change', (e) => {
-        const newColorScheme = e.matches ? 'dark-theme' : 'light-theme';
-        this.renderer.removeClass(document.body, 'light-theme');
-        this.renderer.removeClass(document.body, 'dark-theme');
-        this.renderer.addClass(document.body, newColorScheme);
-      });
+  toggleTheme() {
+    if (this.currentTheme === 'light-theme') {
+      this.renderer.removeClass(document.body, 'light-theme');
+      this.renderer.addClass(document.body, 'dark-theme');
+      this.currentTheme = 'dark-theme';
+    } else {
+      this.renderer.removeClass(document.body, 'dark-theme');
+      this.renderer.addClass(document.body, 'light-theme');
+      this.currentTheme = 'light-theme';
+    }
   }
 }

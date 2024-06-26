@@ -5,6 +5,7 @@ import {
   inject,
   OnDestroy,
   OnInit,
+  Renderer2,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataFactoryService, GroupedOrder, Order } from '../../../util';
@@ -33,6 +34,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
 import { SnackBarService } from '../../../util/service/snackbar.service';
 import { WebSocketService } from '../../../util/service/websocket.service';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-table-component',
@@ -61,6 +63,7 @@ import { WebSocketService } from '../../../util/service/websocket.service';
     MatRowDef,
     MatIcon,
     MatIconButton,
+    MatTooltip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -133,7 +136,11 @@ import { WebSocketService } from '../../../util/service/websocket.service';
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let element">
-          <button mat-icon-button (click)="deleteAll(element)">
+          <button
+            mat-icon-button
+            (click)="deleteAll(element)"
+            [matTooltip]="'Zamknij wszystko'"
+          >
             <mat-icon>delete</mat-icon>
           </button>
         </td>
@@ -217,7 +224,7 @@ import { WebSocketService } from '../../../util/service/websocket.service';
                       mat-icon-button
                       (click)="deleteOrder(order, $event)"
                     >
-                      <mat-icon>delete</mat-icon>
+                      <mat-icon>close</mat-icon>
                     </button>
                   </td>
                 </ng-container>
@@ -388,7 +395,7 @@ export class TableComponent implements OnInit, OnDestroy {
         .getQuotes()
         .subscribe((quote) => {
           this.updateProfit(quote);
-          this.cdr.detectChanges();
+          this.cdr.detectChanges(); // Wymuszenie odświeżenia widoku
         });
     });
   }
@@ -518,5 +525,6 @@ export class TableComponent implements OnInit, OnDestroy {
     });
 
     this.dataSource._updateChangeSubscription();
+    this.cdr.detectChanges();
   }
 }
