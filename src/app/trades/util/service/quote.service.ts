@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { Observable, Subject } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 interface Quote {
   s: string;
@@ -11,7 +10,7 @@ interface Quote {
 @Injectable({
   providedIn: 'root',
 })
-export class WebSocketService {
+export class QuoteService {
   private socket$: WebSocketSubject<any>;
   private quotesSubject = new Subject<Quote>();
 

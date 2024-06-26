@@ -5,10 +5,9 @@ import {
   inject,
   OnDestroy,
   OnInit,
-  Renderer2,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DataFactoryService, GroupedOrder, Order } from '../../../util';
+
 import {
   MatCell,
   MatCellDef,
@@ -20,7 +19,6 @@ import {
   MatRow,
   MatRowDef,
   MatTable,
-  MatTableDataSource,
 } from '@angular/material/table';
 import { Subscription } from 'rxjs';
 import {
@@ -32,9 +30,18 @@ import {
 } from '@angular/animations';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
-import { SnackBarService } from '../../../util/service/snackbar.service';
-import { WebSocketService } from '../../../util/service/websocket.service';
+
 import { MatTooltip } from '@angular/material/tooltip';
+import { GroupedOrder, Order } from '@app/trades/util/types';
+import { ProfitColorDirective } from '@app/trades/util/directives';
+import { tableColumnsConfig } from '@app/trades/util/configs';
+import {
+  ProfitCalculationService,
+  SnackBarService,
+} from '@app/trades/util/service';
+import { ThemeComponent } from '@app/trades/ui/components/theme-component/theme-component';
+import { TableDataService } from '@app/trades/util/service/table-data.service';
+import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-function';
 
 @Component({
   selector: 'app-table-component',
@@ -64,9 +71,14 @@ import { MatTooltip } from '@angular/material/tooltip';
     MatIcon,
     MatIconButton,
     MatTooltip,
+    ProfitColorDirective,
+    ThemeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <div class="theme-toggle">
+      <app-theme-component />
+    </div>
     <table
       mat-table
       [dataSource]="dataSource"
@@ -124,10 +136,7 @@ import { MatTooltip } from '@angular/material/tooltip';
         <td
           mat-cell
           *matCellDef="let element"
-          [ngClass]="{
-            'profit-positive': element.profit > 0,
-            'profit-negative': element.profit < 0,
-          }"
+          [appProfitColor]="element.profit"
         >
           {{ element.profit | number: '1.2-2' }}
         </td>
@@ -209,10 +218,7 @@ import { MatTooltip } from '@angular/material/tooltip';
                   <td
                     mat-cell
                     *matCellDef="let order"
-                    [ngClass]="{
-                      'profit-positive': order.currentProfit > 0,
-                      'profit-negative': order.currentProfit < 0,
-                    }"
+                    [appProfitColor]="order.currentProfit"
                   >
                     {{ order.currentProfit | number: '1.2-2' }}
                   </td>
@@ -220,10 +226,7 @@ import { MatTooltip } from '@angular/material/tooltip';
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef>akcje</th>
                   <td mat-cell *matCellDef="let order">
-                    <button
-                      mat-icon-button
-                      (click)="deleteOrder(order, $event)"
-                    >
+                    <button mat-icon-button (click)="deleteOrder(order)">
                       <mat-icon>close</mat-icon>
                     </button>
                   </td>
@@ -267,6 +270,7 @@ import { MatTooltip } from '@angular/material/tooltip';
       ></tr>
     </table>
   `,
+
   styles: `
     :host {
       display: block;
@@ -350,181 +354,43 @@ import { MatTooltip } from '@angular/material/tooltip';
       background-color: var(--background-hover);
     }
 
-    .profit-positive {
-      color: var(--profit-positive);
-    }
-
-    .profit-negative {
-      color: var(--profit-negative);
-    }
-
     .ext-cell {
       text-align: end;
+    }
+
+    .theme-toggle {
+      height: 30px;
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
     }
   `,
 })
 export class TableComponent implements OnInit, OnDestroy {
-  displayedColumns: string[] = [
-    'symbol',
-    'id',
-    'side',
-    'size',
-    'openTime',
-    'openPrice',
-    'swap',
-    'profit',
-    'actions',
-  ];
+  tableDataService = inject(TableDataService);
+  dataSource = this.tableDataService.dataSource;
+  displayedColumns: string[] = tableColumnsConfig;
   columnsToDisplayWithExpand = [...this.displayedColumns];
-  dataSource = new MatTableDataSource<GroupedOrder>([]);
   expandedElement: GroupedOrder | null = null;
-  apiService = inject(DataFactoryService);
-  snackbarService = inject(SnackBarService);
-  webSocketService = inject(WebSocketService);
+
   cdr = inject(ChangeDetectorRef);
+
   private quotesSubscription!: Subscription;
 
   ngOnInit() {
-    this.apiService.getOrders().subscribe((orders) => {
-      this.dataSource.data = this.groupBySymbol(orders);
-
-      const symbols = [...new Set(orders.map((order) => order.symbol))];
-      this.webSocketService.subscribeSymbols(symbols);
-
-      this.quotesSubscription = this.webSocketService
-        .getQuotes()
-        .subscribe((quote) => {
-          this.updateProfit(quote);
-          this.cdr.detectChanges(); // Wymuszenie odświeżenia widoku
-        });
-    });
+    this.tableDataService.setUpData(this.cdr);
   }
 
   ngOnDestroy() {
-    const symbols = this.dataSource.data.map((group) => group.symbol);
-    this.webSocketService.unsubscribeSymbols(symbols);
-    this.quotesSubscription.unsubscribe();
-  }
-
-  calculateProfit(order: Order, currentPrice: number): number {
-    let multiplier = 1;
-    let sideMultiplier = order.side === 'BUY' ? 1 : -1;
-
-    if (order.symbol === 'BTCUSD') {
-      multiplier = Math.pow(10, 2);
-    } else if (order.symbol === 'ETHUSD') {
-      multiplier = Math.pow(10, 3);
-    } else if (order.symbol === 'TTWO.US') {
-      multiplier = Math.pow(10, 1);
-    }
-
-    return (
-      ((currentPrice - order.openPrice) * multiplier * sideMultiplier) / 100
-    );
-  }
-
-  groupBySymbol(orders: Order[]): GroupedOrder[] {
-    const grouped = orders.reduce(
-      (acc, order) => {
-        if (!acc[order.symbol]) {
-          acc[order.symbol] = {
-            symbol: order.symbol,
-            orders: [],
-            orderCount: 0,
-            openPrice: 0,
-            swap: 0,
-            profit: 0,
-            size: 0,
-          };
-        }
-        acc[order.symbol].orders.push(order);
-        acc[order.symbol].orderCount++;
-        acc[order.symbol].openPrice += order.openPrice;
-        acc[order.symbol].swap += order.swap;
-        acc[order.symbol].size += order.size;
-        return acc;
-      },
-      {} as { [key: string]: GroupedOrder },
-    );
-
-    return Object.keys(grouped).map((symbol) => {
-      const group = grouped[symbol];
-      const orderCount = group.orderCount;
-      const profit = group.orders.reduce(
-        (acc, order) => acc + this.calculateProfit(order, order.closePrice),
-        0,
-      );
-      return {
-        symbol: group.symbol,
-        orderCount,
-        openPrice: +(group.openPrice / orderCount).toFixed(2),
-        swap: +group.swap.toFixed(2),
-        profit: +profit.toFixed(2),
-        size: +group.size.toFixed(2),
-        orders: group.orders,
-      };
-    });
-  }
-
-  updateProfit(quote: { s: string; b: number }) {
-    this.dataSource.data.forEach((group) => {
-      if (group.symbol === quote.s) {
-        group.profit = group.orders.reduce(
-          (acc, order) => acc + this.calculateProfit(order, quote.b),
-          0,
-        );
-        group.orders.forEach((order) => {
-          order['currentProfit'] = this.calculateProfit(order, quote.b);
-        });
-      }
-    });
-    this.dataSource._updateChangeSubscription();
+    this.tableDataService.onDestroy();
   }
 
   deleteAll(el: GroupedOrder) {
-    this.dataSource.data = this.dataSource.data.filter(
-      (element) => element.symbol !== el.symbol,
-    );
-    this.snackbarService.showOrderSnackBar(el);
+    this.dataSource.data = this.tableDataService.deleteAllOrders(el);
   }
 
-  deleteOrder(el: Order, event: Event) {
-    this.dataSource.data = this.dataSource.data.map((element) => {
-      const filteredOrders = element.orders.filter(
-        (order) => order.id !== el.id,
-      );
-      const deletedOrder = element.orders.find((order) => order.id === el.id);
-
-      const averagePrice = filteredOrders.length
-        ? filteredOrders.reduce((sum, order) => sum + order.openPrice, 0) /
-          filteredOrders.length
-        : 0;
-
-      if (deletedOrder) {
-        this.snackbarService.showOrderSnackBar(deletedOrder);
-      }
-
-      const newProfit = filteredOrders.reduce(
-        (acc, order) => acc + this.calculateProfit(order, order.closePrice),
-        0,
-      );
-
-      return {
-        ...element,
-        size: deletedOrder
-          ? +(element.size - deletedOrder.size).toFixed(2)
-          : element.size,
-        openPrice: deletedOrder ? averagePrice : element.openPrice,
-        swap: deletedOrder
-          ? +(element.swap - deletedOrder.swap).toFixed(2)
-          : element.swap,
-        orders: filteredOrders,
-        orderCount: filteredOrders.length,
-        profit: newProfit,
-      };
-    });
-
-    this.dataSource._updateChangeSubscription();
+  deleteOrder(el: Order) {
+    this.dataSource.data = this.tableDataService.deleteOrder(el);
     this.cdr.detectChanges();
   }
 }
