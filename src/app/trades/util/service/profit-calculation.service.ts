@@ -1,4 +1,3 @@
-// app/trades/services/profit-calculation.service.ts
 import { Injectable } from '@angular/core';
 import { SYMBOL_MULTIPLIERS } from '@app/trades/util/constants';
 

@@ -32,16 +32,11 @@ import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
 
 import { MatTooltip } from '@angular/material/tooltip';
-import { GroupedOrder, Order } from '@app/trades/util/types';
+import { GroupedOrder, Order } from 'app/trades/util/interfaces';
 import { ProfitColorDirective } from '@app/trades/util/directives';
 import { tableColumnsConfig } from '@app/trades/util/configs';
-import {
-  ProfitCalculationService,
-  SnackBarService,
-} from '@app/trades/util/service';
 import { ThemeComponent } from '@app/trades/ui/components/theme-component/theme-component';
 import { TableDataService } from '@app/trades/util/service/table-data.service';
-import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-function';
 
 @Component({
   selector: 'app-table-component',
@@ -87,67 +82,70 @@ import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-fu
     >
       <ng-container matColumnDef="symbol">
         <th mat-header-cell *matHeaderCellDef>Symbol</th>
-        <td mat-cell *matCellDef="let element" class="row">
+        <td mat-cell *matCellDef="let orderGroup" class="row">
           <button
             mat-icon-button
             aria-label="expand row"
             (click)="
-              expandedElement = expandedElement === element ? null : element;
+              expandedElement =
+                expandedElement === orderGroup ? null : orderGroup;
               $event.stopPropagation()
             "
           >
-            @if (expandedElement === element) {
+            @if (expandedElement === orderGroup) {
               <mat-icon>keyboard_arrow_up</mat-icon>
             } @else {
               <mat-icon>keyboard_arrow_down</mat-icon>
             }
           </button>
-          {{ element.symbol }}
-          <div class="order-count">{{ element.orderCount }}</div>
+          {{ orderGroup.symbol }}
+          <div class="order-count">{{ orderGroup.orderCount }}</div>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="id">
         <th mat-header-cell *matHeaderCellDef>Order ID</th>
-        <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+        <td mat-cell *matCellDef="let orderGroup">{{ orderGroup.id }}</td>
       </ng-container>
       <ng-container matColumnDef="side">
         <th mat-header-cell *matHeaderCellDef>Side</th>
-        <td mat-cell *matCellDef="let element">{{ element.side }}</td>
+        <td mat-cell *matCellDef="let orderGroup">{{ orderGroup.side }}</td>
       </ng-container>
       <ng-container matColumnDef="size">
         <th mat-header-cell *matHeaderCellDef>Size</th>
-        <td mat-cell *matCellDef="let element">{{ element.size }}</td>
+        <td mat-cell *matCellDef="let orderGroup">{{ orderGroup.size }}</td>
       </ng-container>
       <ng-container matColumnDef="openTime">
         <th mat-header-cell *matHeaderCellDef>Open Time</th>
-        <td mat-cell *matCellDef="let element">{{ element.openTime }}</td>
+        <td mat-cell *matCellDef="let orderGroup">{{ orderGroup.openTime }}</td>
       </ng-container>
       <ng-container matColumnDef="openPrice">
         <th mat-header-cell *matHeaderCellDef>Open Price</th>
-        <td mat-cell *matCellDef="let element">{{ element.openPrice }}</td>
+        <td mat-cell *matCellDef="let orderGroup">
+          {{ orderGroup.openPrice }}
+        </td>
       </ng-container>
       <ng-container matColumnDef="swap">
         <th mat-header-cell *matHeaderCellDef>Swap</th>
-        <td mat-cell *matCellDef="let element">{{ element.swap }}</td>
+        <td mat-cell *matCellDef="let orderGroup">{{ orderGroup.swap }}</td>
       </ng-container>
       <ng-container matColumnDef="profit">
         <th mat-header-cell *matHeaderCellDef>Profit</th>
         <td
           mat-cell
-          *matCellDef="let element"
-          [appProfitColor]="element.profit"
+          *matCellDef="let orderGroup"
+          [appProfitColor]="orderGroup.profit"
         >
-          {{ element.profit | number: '1.2-2' }}
+          {{ orderGroup.profit | number: '1.2-2' }}
         </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let element">
+        <td mat-cell *matCellDef="let orderGroup">
           <button
             mat-icon-button
-            (click)="deleteAll(element)"
+            (click)="deleteAll(orderGroup)"
             [matTooltip]="'Zamknij wszystko'"
           >
             <mat-icon>delete</mat-icon>
@@ -159,17 +157,17 @@ import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-fu
         <td
           class="expand"
           mat-cell
-          *matCellDef="let element"
+          *matCellDef="let orderGroup"
           [attr.colspan]="columnsToDisplayWithExpand.length"
         >
           <div
-            class="example-element-detail"
+            class="order-detail"
             [@detailExpand]="
-              element === expandedElement ? 'expanded' : 'collapsed'
+              orderGroup === expandedElement ? 'expanded' : 'collapsed'
             "
           >
-            <div class="example-element-diagram">
-              <table mat-table [dataSource]="element.orders">
+            <div class="order-detail-container">
+              <table mat-table [dataSource]="orderGroup.orders">
                 <ng-container matColumnDef="symbol">
                   <th mat-header-cell *matHeaderCellDef>Symbol</th>
                   <td mat-cell *matCellDef="let order" class="ext-cell">
@@ -178,8 +176,20 @@ import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-fu
                 </ng-container>
                 <ng-container matColumnDef="id">
                   <th mat-header-cell *matHeaderCellDef>Order ID</th>
-                  <td mat-cell *matCellDef="let element" class="ext-cell">
-                    {{ element.id }}
+                  <td mat-cell *matCellDef="let order" class="ext-cell">
+                    {{ order.id }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="side">
+                  <th mat-header-cell *matHeaderCellDef>Side</th>
+                  <td mat-cell *matCellDef="let order" class="ext-cell">
+                    {{ order.side }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="size">
+                  <th mat-header-cell *matHeaderCellDef>Size</th>
+                  <td mat-cell *matCellDef="let order" class="ext-cell">
+                    {{ order.size }}
                   </td>
                 </ng-container>
 
@@ -201,18 +211,7 @@ import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-fu
                   <th mat-header-cell *matHeaderCellDef>Swap</th>
                   <td mat-cell *matCellDef="let order">{{ order.swap }}</td>
                 </ng-container>
-                <ng-container matColumnDef="size">
-                  <th mat-header-cell *matHeaderCellDef>Size</th>
-                  <td mat-cell *matCellDef="let order" class="ext-cell">
-                    {{ order.size }}
-                  </td>
-                </ng-container>
-                <ng-container matColumnDef="side">
-                  <th mat-header-cell *matHeaderCellDef>Side</th>
-                  <td mat-cell *matCellDef="let order" class="ext-cell">
-                    {{ order.side }}
-                  </td>
-                </ng-container>
+
                 <ng-container matColumnDef="profit">
                   <th mat-header-cell *matHeaderCellDef>Profit</th>
                   <td
@@ -234,20 +233,7 @@ import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-fu
 
                 <tr
                   mat-row
-                  *matRowDef="
-                    let row;
-                    columns: [
-                      'symbol',
-                      'id',
-                      'side',
-                      'size',
-                      'openTime',
-                      'openPrice',
-                      'swap',
-                      'profit',
-                      'actions',
-                    ]
-                  "
+                  *matRowDef="let row; columns: columnsToDisplayWithExpand"
                 ></tr>
               </table>
             </div>
@@ -258,15 +244,17 @@ import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-fu
       <tr mat-header-row *matHeaderRowDef="columnsToDisplayWithExpand"></tr>
       <tr
         mat-row
-        *matRowDef="let element; columns: columnsToDisplayWithExpand"
-        class="example-element-row"
-        [class.example-expanded-row]="expandedElement === element"
-        (click)="expandedElement = expandedElement === element ? null : element"
+        *matRowDef="let orderGroup; columns: columnsToDisplayWithExpand"
+        class="order-detail-row"
+        [class.example-expanded-row]="expandedElement === orderGroup"
+        (click)="
+          expandedElement = expandedElement === orderGroup ? null : orderGroup
+        "
       ></tr>
       <tr
         mat-row
         *matRowDef="let row; columns: ['expandedDetail']"
-        class="example-detail-row"
+        class="detail-row"
       ></tr>
     </table>
   `,
@@ -281,44 +269,37 @@ import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-fu
       width: 100%;
     }
 
-    tr.example-detail-row {
+    tr.detail-row {
       height: 0;
     }
 
-    tr.example-element-row:not(.example-expanded-row):hover {
+    tr.order-detail-row:not(.example-expanded-row):hover {
       background-color: var(--background-hover);
     }
 
-    tr.example-element-row:not(.example-expanded-row):active {
+    tr.order-detail-row:not(.example-expanded-row):active {
       background-color: var(--background-hover);
     }
 
-    .example-element-row td {
+    .order-detail-row td {
       border-bottom-width: 0;
     }
 
-    .example-element-detail {
+    .order-detail {
       overflow: hidden;
       display: flex;
       width: 100%;
       padding: 0;
     }
-    .example-element-diagram {
+    .order-detail-container {
       height: fit-content;
       width: 100%;
-    }
-    .mat-column-expandedDetail {
-      padding: 0;
     }
 
     .mat-mdc-cell,
     .mat-mdc-header-cell {
       color: var(--text-default);
       min-width: 100px;
-    }
-
-    .example-element-description-attribution {
-      opacity: 0.5;
     }
 
     .row {
@@ -368,14 +349,11 @@ import { deleteAllOrders } from '@app/trades/util/functions/delete-all-orders-fu
 })
 export class TableComponent implements OnInit, OnDestroy {
   tableDataService = inject(TableDataService);
+  cdr = inject(ChangeDetectorRef);
   dataSource = this.tableDataService.dataSource;
   displayedColumns: string[] = tableColumnsConfig;
   columnsToDisplayWithExpand = [...this.displayedColumns];
   expandedElement: GroupedOrder | null = null;
-
-  cdr = inject(ChangeDetectorRef);
-
-  private quotesSubscription!: Subscription;
 
   ngOnInit() {
     this.tableDataService.setUpData(this.cdr);

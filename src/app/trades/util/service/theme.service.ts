@@ -30,6 +30,7 @@ export class ThemeService {
     this.renderer.removeClass(document.body, 'light-theme');
     this.renderer.addClass(document.body, this.currentTheme);
     this.themeChangeSubject.next(this.currentTheme);
+    localStorage.setItem('appTheme', this.currentTheme);
   }
 
   listenToThemeChanges(): void {
@@ -56,6 +57,8 @@ export class ThemeService {
       this.renderer.addClass(document.body, 'light-theme');
       this.currentTheme = 'light-theme';
     }
+    localStorage.removeItem('appTheme');
+    localStorage.setItem('appTheme', this.currentTheme);
     this.themeChangeSubject.next(this.currentTheme);
   }
 }
