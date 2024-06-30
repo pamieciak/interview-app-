@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, inject, Injectable, OnInit } from '@angular/core';
 import { DataFactoryService } from '@app/trades/data-access/services/data-factory.service';
 import { QuoteService } from '@app/trades/util/service/quote.service';
-import { GroupedOrder, Order } from '@app/trades/util/types';
+import { GroupedOrder, Order } from 'app/trades/util/interfaces';
 import { ProfitCalculationService } from '@app/trades/util/service/profit-calculation.service';
 import { Subscription } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
@@ -121,54 +121,56 @@ export class TableDataService {
 
   deleteAllOrders(orders: GroupedOrder) {
     this.snackbarService.showOrderSnackBar(orders);
-    return this.dataSource.data.filter(
-      (element) => element.symbol !== orders.symbol,
-    );
+    return (this.dataSource.data = this.dataSource.data.filter(
+      (groupOrder) => groupOrder.symbol !== orders.symbol,
+    ));
   }
 
-  deleteOrder(el: Order) {
-    return this.dataSource.data.map((element) => {
-      const filteredOrders = element.orders.filter(
-        (order) => order.id !== el.id,
-      );
-      const deletedOrder = element.orders.find((order) => order.id === el.id);
+  deleteOrder(singleOrder: Order) {
+    return (this.dataSource.data = this.dataSource.data
+      .map((groupOrder) => {
+        const filteredOrders = groupOrder.orders.filter(
+          (order) => order.id !== singleOrder.id,
+        );
+        const deletedOrder = groupOrder.orders.find(
+          (order) => order.id === singleOrder.id,
+        );
 
-      const averagePrice = filteredOrders.length
-        ? filteredOrders.reduce((sum, order) => sum + order.openPrice, 0) /
-          filteredOrders.length
-        : 0;
+        const averagePrice = filteredOrders.length
+          ? filteredOrders.reduce((sum, order) => sum + order.openPrice, 0) /
+            filteredOrders.length
+          : 0;
 
-      if (deletedOrder) {
-        this.snackbarService.showOrderSnackBar(deletedOrder);
-      }
+        if (deletedOrder) {
+          this.snackbarService.showOrderSnackBar(deletedOrder);
+        }
 
-      const newProfit = filteredOrders.reduce(
-        (acc, order) =>
-          acc +
-          this.profitCalculationService.calculateProfit(
-            order.openPrice,
-            order.closePrice,
-            order.side,
-            order.symbol,
-          ),
-        0,
-      );
+        const newProfit = filteredOrders.reduce(
+          (acc, order) =>
+            acc +
+            this.profitCalculationService.calculateProfit(
+              order.openPrice,
+              order.closePrice,
+              order.side,
+              order.symbol,
+            ),
+          0,
+        );
 
-      return {
-        ...element,
-        size: deletedOrder
-          ? +(element.size - deletedOrder.size).toFixed(2)
-          : element.size,
-        openPrice: deletedOrder ? averagePrice : element.openPrice,
-        swap: deletedOrder
-          ? +(element.swap - deletedOrder.swap).toFixed(2)
-          : element.swap,
-        orders: filteredOrders,
-        orderCount: filteredOrders.length,
-        profit: newProfit,
-      };
-    });
-
-    this.dataSource._updateChangeSubscription();
+        return {
+          ...groupOrder,
+          size: deletedOrder
+            ? +(groupOrder.size - deletedOrder.size).toFixed(2)
+            : groupOrder.size,
+          openPrice: deletedOrder ? averagePrice : groupOrder.openPrice,
+          swap: deletedOrder
+            ? +(groupOrder.swap - deletedOrder.swap).toFixed(2)
+            : groupOrder.swap,
+          orders: filteredOrders,
+          orderCount: filteredOrders.length,
+          profit: newProfit,
+        };
+      })
+      .filter((groupOrder) => groupOrder.orders.length > 0));
   }
 }

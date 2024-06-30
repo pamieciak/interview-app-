@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
 
 import { SnackBarService } from '@app/trades/util/service/snackbar.service';
-import { ApiResponse, Order } from '@app/trades/util/types';
+import { ApiResponse, Order } from 'app/trades/util/interfaces';
 
 @Injectable({
   providedIn: 'root',

@@ -4,7 +4,7 @@ import {
   MatSnackBarHorizontalPosition,
   MatSnackBarVerticalPosition,
 } from '@angular/material/snack-bar';
-import { GroupedOrder, Order } from '@app/trades/util/types';
+import { GroupedOrder, Order } from 'app/trades/util/interfaces';
 
 @Injectable({
   providedIn: 'root',

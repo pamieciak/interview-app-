@@ -1,11 +1,7 @@
 import { Injectable } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { Observable, Subject } from 'rxjs';
-
-interface Quote {
-  s: string;
-  b: number;
-}
+import { Quote } from '@app/trades/util/interfaces';
 
 @Injectable({
   providedIn: 'root',
